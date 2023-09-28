@@ -10,7 +10,7 @@
         <VBox alignment="CENTER" layoutX="230.0" layoutY="148.0" spacing="10.0">
             <children>
                 <Label text="Вход"/>
-                <TextField fx:id="usernameField" promptText="Логин"/>
+                <TextField fx:id="emailField" promptText="Логин"/>
                 <PasswordField fx:id="passwordField" promptText="Пароль"/>
                 <Button text="Войти" onAction="#loginButtonAction"/>
                 <Label fx:id="messageLabel" text=""/>
