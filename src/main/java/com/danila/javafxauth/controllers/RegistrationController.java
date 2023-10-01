@@ -2,6 +2,7 @@ package com.danila.javafxauth.controllers;
 
 import com.danila.javafxauth.Main;
 
+import com.danila.javafxauth.Utils;
 import com.danila.javafxauth.database.DatabaseConnection;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -30,7 +31,6 @@ public class RegistrationController {
     @FXML
     private Button registrationButton;
 
-    //TODO dokerize db and app
 
     // Метод создания всплывающей подсказки
     private void showTooltip(Control control, String message, int durationMillis) {
@@ -72,7 +72,7 @@ public class RegistrationController {
         String phone = phoneField.getText();
         String email = emailField.getText();
         String password = passwordField.getText();
-        String uuid = Main.getInstance().getUUID();
+        String uuid = Utils.getUUID();
 
         // Создаём диалоговое окно Alert для отображения сообщения
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -119,10 +119,9 @@ public class RegistrationController {
 
         // Проверка на уникальность логина
         if (!isEmailUnique(email)) {
-//            alert.setTitle("Неверный email"); // хз поч не появляется alert
-//            alert.setContentText("Пользователь с таким email уже существует");
-//            return;
-            showTooltip(emailField, "Такой email уже существует", 1000);
+            alert.setTitle("Неверный email");
+            alert.setContentText("Пользователь с таким email уже существует");
+            alert.showAndWait();
             return;
         } else {
             clearTooltip(emailField);

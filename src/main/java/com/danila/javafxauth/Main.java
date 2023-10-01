@@ -25,25 +25,6 @@ public class Main extends Application {
         switchToLoginPage();
     }
 
-    // Метод для получения UUID
-    public String getUUID() {
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder("wmic", "csproduct", "get", "UUID");
-            Process process = processBuilder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            StringBuilder uuidBuilder = new StringBuilder();
-
-            while ((line = reader.readLine()) != null) {
-                uuidBuilder.append(line.trim());
-            }
-
-            return uuidBuilder.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     // Метод для перехода на страницу логирования
     public void switchToLoginPage() {

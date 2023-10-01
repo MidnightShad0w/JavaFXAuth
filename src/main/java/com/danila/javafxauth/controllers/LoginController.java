@@ -1,6 +1,7 @@
 package com.danila.javafxauth.controllers;
 
 import com.danila.javafxauth.Main;
+import com.danila.javafxauth.Utils;
 import com.danila.javafxauth.database.DatabaseConnection;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -31,7 +32,7 @@ public class LoginController {
     private void loginButtonAction() {
         String email = emailField.getText();
         String password = passwordField.getText();
-        String uuid = Main.getInstance().getUUID();
+        String uuid = Utils.getUUID();
 
         try {
             Connection connection = DatabaseConnection.getConnection();
