@@ -4,6 +4,10 @@ import com.danila.javafxauth.Main;
 
 import com.danila.javafxauth.Utils;
 import com.danila.javafxauth.database.DatabaseConnection;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.PopupWindow;
@@ -33,19 +37,23 @@ public class RegistrationController {
 
 
     // Метод создания всплывающей подсказки
-    private void showTooltip(Control control, String message, int durationMillis) {
+    private void showTooltip(Control control, String message) {
         Tooltip tooltip = new Tooltip(message);
-        tooltip.setShowDuration(Duration.millis(durationMillis));
+        tooltip.setShowDuration(Duration.millis(2000));
 
         tooltip.setAnchorLocation(PopupWindow.AnchorLocation.WINDOW_BOTTOM_LEFT);
 
         Tooltip.install(control, tooltip);
         tooltip.show(control.getScene().getWindow());
-    }
 
-    // Метод очистки всплывающей подсказки
-    private void clearTooltip(Control control) {
-        Tooltip.uninstall(control, null);
+        // Создаем задержку для скрытия tooltip
+        Timeline timeline = new Timeline(new KeyFrame(Duration.millis(2000), new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                tooltip.hide();
+            }
+        }));
+        timeline.play();
     }
 
     private boolean isEmailUnique(String email) {
@@ -87,34 +95,26 @@ public class RegistrationController {
 
         // Проверка ввода имени
         if (name.isEmpty()) {
-            showTooltip(nameField, "Введите имя", 1000);
+            showTooltip(nameField, "Введите имя");
             return;
-        } else {
-            clearTooltip(nameField);
         }
 
         // Проверка ввода телефона (допустимы только цифры)
         if (phone.isEmpty() || !phone.matches("\\d+")) {
-            showTooltip(phoneField, "Номер телефона должен содержать только цифры", 100);
+            showTooltip(phoneField, "Номер телефона должен содержать только цифры");
             return;
-        } else {
-            clearTooltip(phoneField);
         }
 
         // Проверка ввода email (валидная почта)
         if (email.isEmpty() || !email.matches("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}")) {
-            showTooltip(emailField, "Пожалуйста, введите корректный адрес электронной почты", 1000);
+            showTooltip(emailField, "Пожалуйста, введите корректный адрес электронной почты");
             return;
-        } else {
-            clearTooltip(emailField);
         }
 
         // Проверка ввода пароля (буквы и цифры, минимум 6 знаков)
         if (password.isEmpty() || !password.matches("^[A-Za-z0-9]{6,}$")) {
-            showTooltip(passwordField, "Пароль должен содержать буквы и цифры и быть не менее 6 символов", 1000);
+            showTooltip(passwordField, "Пароль должен содержать буквы и цифры и быть не менее 6 символов");
             return;
-        } else {
-            clearTooltip(passwordField);
         }
 
         // Проверка на уникальность логина
@@ -123,8 +123,6 @@ public class RegistrationController {
             alert.setContentText("Пользователь с таким email уже существует");
             alert.showAndWait();
             return;
-        } else {
-            clearTooltip(emailField);
         }
 
         try {
