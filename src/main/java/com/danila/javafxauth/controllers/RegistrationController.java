@@ -32,10 +32,6 @@ public class RegistrationController {
     @FXML
     private PasswordField passwordField;
 
-    @FXML
-    private Button registrationButton;
-
-
     // Метод создания всплывающей подсказки
     private void showTooltip(Control control, String message) {
         Tooltip tooltip = new Tooltip(message);
@@ -59,7 +55,7 @@ public class RegistrationController {
     private boolean isEmailUnique(String email) {
         try {
             Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT COUNT(*) FROM users WHERE email = ?";
+            String query = "SELECT COUNT(*) FROM \"user\" WHERE email = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, email);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -129,7 +125,7 @@ public class RegistrationController {
             // Создаем подключение к бд
             Connection connection = DatabaseConnection.getConnection();
             // SQL-запрос для вставки данных в таблицу
-            String query = "INSERT INTO users (name, phone, email, password, uuid) VALUES (?, ?, ?, ?, ?)";
+            String query = "INSERT INTO \"user\" (name, phone, email, password, uuid) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, phone);

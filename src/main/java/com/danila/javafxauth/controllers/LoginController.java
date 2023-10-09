@@ -20,13 +20,7 @@ public class LoginController {
     private PasswordField passwordField;
 
     @FXML
-    private Button loginButton;
-
-    @FXML
     private Label messageLabel;
-
-    @FXML
-    private Button registrationButton;
 
     @FXML
     private void loginButtonAction() {
@@ -36,7 +30,7 @@ public class LoginController {
 
         try {
             Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT * FROM users WHERE email = ? AND password = ?";
+            String query = "SELECT * FROM \"user\" WHERE email = ? AND password = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, email);
             preparedStatement.setString(2, password);
