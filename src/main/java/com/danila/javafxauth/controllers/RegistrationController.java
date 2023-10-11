@@ -3,7 +3,9 @@ package com.danila.javafxauth.controllers;
 import com.danila.javafxauth.Main;
 
 import com.danila.javafxauth.Utils;
+import com.danila.javafxauth.dao.UserDao;
 import com.danila.javafxauth.database.DatabaseConnection;
+import com.danila.javafxauth.model.User;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
@@ -36,9 +38,7 @@ public class RegistrationController {
     private void showTooltip(Control control, String message) {
         Tooltip tooltip = new Tooltip(message);
         tooltip.setShowDuration(Duration.millis(2000));
-
         tooltip.setAnchorLocation(PopupWindow.AnchorLocation.WINDOW_BOTTOM_LEFT);
-
         Tooltip.install(control, tooltip);
         tooltip.show(control.getScene().getWindow());
 
@@ -54,14 +54,7 @@ public class RegistrationController {
 
     private boolean isEmailUnique(String email) {
         try {
-            Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT COUNT(*) FROM \"user\" WHERE email = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, email);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            resultSet.next();
-            int count = resultSet.getInt(1);
-            preparedStatement.close();
+            int count = UserDao.checkUserEmail(email);
             return count == 0; // Если count равен 0, email уникален
         } catch (SQLException e) {
             e.printStackTrace();
@@ -81,7 +74,6 @@ public class RegistrationController {
         // Создаём диалоговое окно Alert для отображения сообщения
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
-
 
         if (uuid == null) {
             alert.setTitle("Ошибка UUID");
@@ -122,21 +114,7 @@ public class RegistrationController {
         }
 
         try {
-            // Создаем подключение к бд
-            Connection connection = DatabaseConnection.getConnection();
-            // SQL-запрос для вставки данных в таблицу
-            String query = "INSERT INTO \"user\" (name, phone, email, password, uuid) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, name);
-            preparedStatement.setString(2, phone);
-            preparedStatement.setString(3, email);
-            preparedStatement.setString(4, password);
-            preparedStatement.setString(5, uuid);
-
-            // Выполнение запроса на вставку
-            int rowsInserted = preparedStatement.executeUpdate();
-
-            if (rowsInserted > 0) {
+            if (UserDao.createUser(new User(name, phone, email, password, uuid)) > 0) {
                 // Если вставка прошла успешно
                 alert.setTitle("Успешная регистрация");
                 alert.setContentText("Регистрация выполнена успешно!");
@@ -145,8 +123,6 @@ public class RegistrationController {
                 alert.setTitle("Запись не добавлена в бд");
                 alert.setContentText("Не удалось выполнить регистрацию.");
             }
-
-            preparedStatement.close();
 
         } catch (SQLException e) {
             e.printStackTrace();

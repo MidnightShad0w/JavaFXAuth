@@ -2,7 +2,9 @@ package com.danila.javafxauth.controllers;
 
 import com.danila.javafxauth.Main;
 import com.danila.javafxauth.Utils;
+import com.danila.javafxauth.dao.UserDao;
 import com.danila.javafxauth.database.DatabaseConnection;
+import com.danila.javafxauth.model.User;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -29,16 +31,9 @@ public class LoginController {
         String uuid = Utils.getUUID();
 
         try {
-            Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT * FROM \"user\" WHERE email = ? AND password = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, email);
-            preparedStatement.setString(2, password);
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                String storedUUID = resultSet.getString("uuid");
-                if (storedUUID.equals(uuid)) {
+            User checkingUser = UserDao.getUser(new User(email, password, uuid));
+            if (checkingUser != null) {
+                if (checkingUser.getUuid().equals(uuid)) {
                     messageLabel.setText("Вход выполнен успешно");
                     Main.getInstance().switchToSuccessPage();
                 } else {
