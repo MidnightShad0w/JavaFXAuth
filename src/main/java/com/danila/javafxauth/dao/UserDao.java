@@ -54,7 +54,7 @@ public class UserDao {
         return rowsInserted;
     }
 
-    public static int checkUserEmail(String email) throws SQLException {
+    public static boolean checkUserEmail(String email) throws SQLException {
         Connection connection = DatabaseConnection.getConnection();
         String query = "SELECT COUNT(*) FROM \"user\" WHERE email = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -63,6 +63,6 @@ public class UserDao {
         resultSet.next();
         int count = resultSet.getInt(1);
         preparedStatement.close();
-        return count;
+        return count == 0;
     }
 }

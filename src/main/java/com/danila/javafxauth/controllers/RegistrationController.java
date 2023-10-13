@@ -5,6 +5,7 @@ import com.danila.javafxauth.Main;
 import com.danila.javafxauth.Utils;
 import com.danila.javafxauth.dao.UserDao;
 import com.danila.javafxauth.database.DatabaseConnection;
+import com.danila.javafxauth.exceptions.InvalidUserException;
 import com.danila.javafxauth.model.User;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -54,8 +55,7 @@ public class RegistrationController {
 
     private boolean isEmailUnique(String email) {
         try {
-            int count = UserDao.checkUserEmail(email);
-            return count == 0; // Если count равен 0, email уникален
+            return UserDao.checkUserEmail(email);
         } catch (SQLException e) {
             e.printStackTrace();
             return false; // Если произошла ошибка считаем email неуникальным
@@ -74,47 +74,23 @@ public class RegistrationController {
         // Создаём диалоговое окно Alert для отображения сообщения
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
+        var user = new User(name, phone, email, password, uuid);
 
-        if (uuid == null) {
-            alert.setTitle("Ошибка UUID");
-            alert.setContentText("Не удалось получить UUID устройства");
-            return;
-        }
-
-        // Проверка ввода имени
-        if (name.isEmpty()) {
-            showTooltip(nameField, "Введите имя");
-            return;
-        }
-
-        // Проверка ввода телефона (допустимы только цифры)
-        if (phone.isEmpty() || !phone.matches("\\d+")) {
-            showTooltip(phoneField, "Номер телефона должен содержать только цифры");
-            return;
-        }
-
-        // Проверка ввода email (валидная почта)
-        if (email.isEmpty() || !email.matches("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}")) {
-            showTooltip(emailField, "Пожалуйста, введите корректный адрес электронной почты");
-            return;
-        }
-
-        // Проверка ввода пароля (буквы и цифры, минимум 6 знаков)
-        if (password.isEmpty() || !password.matches("^[A-Za-z0-9]{6,}$")) {
-            showTooltip(passwordField, "Пароль должен содержать буквы и цифры и быть не менее 6 символов");
-            return;
-        }
-
-        // Проверка на уникальность логина
-        if (!isEmailUnique(email)) {
-            alert.setTitle("Неверный email");
-            alert.setContentText("Пользователь с таким email уже существует");
-            alert.showAndWait();
-            return;
+        try {
+            validateUser(user);
+        } catch (InvalidUserException ex) {
+            if (ex.getMessage() == null) {
+                return;
+            } else if (!ex.getMessage().isEmpty()) {
+                alert.setTitle(ex.getTitle());
+                alert.setContentText(ex.getMessage());
+                alert.showAndWait();
+                return;
+            }
         }
 
         try {
-            if (UserDao.createUser(new User(name, phone, email, password, uuid)) > 0) {
+            if (UserDao.createUser(user) > 0) {
                 // Если вставка прошла успешно
                 alert.setTitle("Успешная регистрация");
                 alert.setContentText("Регистрация выполнена успешно!");
@@ -123,7 +99,6 @@ public class RegistrationController {
                 alert.setTitle("Запись не добавлена в бд");
                 alert.setContentText("Не удалось выполнить регистрацию.");
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
             alert.setTitle("Ошибка SQL");
@@ -131,6 +106,43 @@ public class RegistrationController {
         } finally {
             alert.showAndWait();
         }
+    }
+
+    private void  validateUser(User user) throws InvalidUserException {
+        String title = "";
+        String message = "";
+
+        if (user.getUuid() == null) {
+            title = "Ошибка UUID";
+            message = "Не удалось получить UUID устройства";
+        }
+
+        if (user.getName().isEmpty()) {
+            showTooltip(nameField, "Введите имя");
+            throw new InvalidUserException();
+        }
+
+        if (user.getPhone().isEmpty() || !user.getPhone().matches("\\d+")) {
+            showTooltip(phoneField, "Номер телефона должен содержать только цифры");
+            throw new InvalidUserException();
+        }
+
+        if (user.getEmail().isEmpty() || !user.getEmail().matches("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}")) {
+            showTooltip(emailField, "Пожалуйста, введите корректный адрес электронной почты");
+            throw new InvalidUserException();
+        }
+
+        if (user.getPassword().isEmpty() || !user.getPassword().matches("^[A-Za-z0-9]{6,}$")) {
+            showTooltip(passwordField, "Пароль должен содержать буквы и цифры и быть не менее 6 символов");
+            throw new InvalidUserException();
+        }
+
+        if (!isEmailUnique(user.getEmail())) {
+            title = "Неверный email";
+            message = "Пользователь с таким email уже существует";
+        }
+
+        throw new InvalidUserException(title, message);
     }
 
     // Метод для обработки нажатия кнопки "Вернуться"
