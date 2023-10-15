@@ -33,12 +33,12 @@ public class LoginController {
         String email = emailField.getText();
         String password = passwordField.getText();
         String uuid = Utils.getUUID();
-
+// TODO - доделать проверку паролей, не работает если зайти-выйти - ввести верно
         try {
             User checkingUser = UserDao.getUserByEmail(email);
             if (checkingUser != null) {
                 // Проверяем, не заблокирован ли пользователь
-                if (checkingUser.getBlockingTime() == null || checkingUser.getBlockingTime().plusSeconds(20).isBefore(LocalDateTime.now())) {
+                if (checkingUser.getBlockingTime() == null || checkingUser.getBlockingTime().plusSeconds(5).isBefore(LocalDateTime.now())) {
                     // Если пользователь не заблокирован или блокировка истекла
                     if (Utils.checkPassword(password, checkingUser.getPassword())) {
                         // Если пароль верен
