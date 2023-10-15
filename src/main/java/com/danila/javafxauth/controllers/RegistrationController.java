@@ -35,7 +35,6 @@ public class RegistrationController {
     @FXML
     private PasswordField passwordField;
 
-    // Метод создания всплывающей подсказки
     private void showTooltip(Control control, String message) {
         Tooltip tooltip = new Tooltip(message);
         tooltip.setShowDuration(Duration.millis(2000));
@@ -43,7 +42,6 @@ public class RegistrationController {
         Tooltip.install(control, tooltip);
         tooltip.show(control.getScene().getWindow());
 
-        // Создаем задержку для скрытия tooltip
         Timeline timeline = new Timeline(new KeyFrame(Duration.millis(2000), new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -58,26 +56,25 @@ public class RegistrationController {
             return UserDao.checkUserEmail(email);
         } catch (SQLException e) {
             e.printStackTrace();
-            return false; // Если произошла ошибка считаем email неуникальным
+            return false;
         }
     }
-
-    // Метод для обработки нажатия кнопки "Зарегистрироваться"
     @FXML
     private void registrationButtonAction() {
         String name = nameField.getText();
         String phone = phoneField.getText();
         String email = emailField.getText();
         String password = passwordField.getText();
+        String hashedPassword = Utils.generateHash(password);
         String uuid = Utils.getUUID();
 
-        // Создаём диалоговое окно Alert для отображения сообщения
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
-        var user = new User(name, phone, email, password, uuid);
+
+        var user = new User(name, phone, email, hashedPassword, uuid, null, null);
 
         try {
-            validateUser(user);
+            validateUser(user, password);
         } catch (InvalidUserException ex) {
             if (ex.getMessage() == null) {
                 return;
@@ -91,7 +88,6 @@ public class RegistrationController {
 
         try {
             if (UserDao.createUser(user) > 0) {
-                // Если вставка прошла успешно
                 alert.setTitle("Успешная регистрация");
                 alert.setContentText("Регистрация выполнена успешно!");
                 Main.getInstance().switchToLoginPage();
@@ -108,7 +104,7 @@ public class RegistrationController {
         }
     }
 
-    private void  validateUser(User user) throws InvalidUserException {
+    private void  validateUser(User user, String password) throws InvalidUserException {
         String title = "";
         String message = "";
 
@@ -132,7 +128,7 @@ public class RegistrationController {
             throw new InvalidUserException();
         }
 
-        if (user.getPassword().isEmpty() || !user.getPassword().matches("^[A-Za-z0-9]{6,}$")) {
+        if (user.getPassword().isEmpty() || !password.matches("^[A-Za-z0-9]{6,}$")) {
             showTooltip(passwordField, "Пароль должен содержать буквы и цифры и быть не менее 6 символов");
             throw new InvalidUserException();
         }
@@ -145,7 +141,6 @@ public class RegistrationController {
         throw new InvalidUserException(title, message);
     }
 
-    // Метод для обработки нажатия кнопки "Вернуться"
     @FXML
     private void backToLoginButtonAction() {
         Main.getInstance().switchToLoginPage();

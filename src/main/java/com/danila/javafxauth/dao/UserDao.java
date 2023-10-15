@@ -3,12 +3,11 @@ package com.danila.javafxauth.dao;
 import com.danila.javafxauth.database.DatabaseConnection;
 import com.danila.javafxauth.model.User;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDateTime;
 
 public class UserDao {
+
     public static User getUser(User user) throws SQLException {
         Connection connection = DatabaseConnection.getConnection();
         String query = "SELECT * FROM \"user\" WHERE email = ? AND password = ?";
@@ -16,30 +15,45 @@ public class UserDao {
         preparedStatement.setString(1, user.getEmail());
         preparedStatement.setString(2, user.getPassword());
         ResultSet resultSet = preparedStatement.executeQuery();
-
         if (resultSet.next()) {
-            // Извлекаем данные из ResultSet
             String email = resultSet.getString("email");
             String password = resultSet.getString("password");
             Object uuidObject = resultSet.getObject("uuid");
             String uuid = uuidObject.toString();
-//            String currentUUID = Utils.getUUID();
-//            if (user.getUuid().equals(currentUUID)) {
-//                User retrievedUser = new User(email, password, uuid);
-//                return retrievedUser;
-//            } else {
-//                return null;
-//            }
             User retrievedUser = new User(email, password, uuid);
+            preparedStatement.close();
             return retrievedUser;
         } else {
-            return null; // Если пользователь не найден
+            preparedStatement.close();
+            return null;
+        }
+    }
+    public static User getUserByEmail(String checkingEmail) throws SQLException {
+        Connection connection = DatabaseConnection.getConnection();
+        String query = "SELECT * FROM \"user\" WHERE email = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setString(1, checkingEmail);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        if (resultSet.next()) {
+            String name = resultSet.getString("name");
+            String phone = resultSet.getString("phone");
+            String email = resultSet.getString("email");
+            String password = resultSet.getString("password");
+            Object uuidObject = resultSet.getObject("uuid");
+            String uuid = uuidObject.toString();
+            String message = resultSet.getString("message");
+            Timestamp blockingTimeTimestamp = resultSet.getTimestamp("blockingTime");
+            LocalDateTime blockingTime = blockingTimeTimestamp != null ? blockingTimeTimestamp.toLocalDateTime() : null;
+            User retrievedUser = new User(name,phone, email, password, uuid, message, blockingTime);
+            preparedStatement.close();
+            return retrievedUser;
+        } else {
+            preparedStatement.close();
+            return null;
         }
     }
     public static int createUser(User user) throws SQLException {
-        // Создаем подключение к бд
         Connection connection = DatabaseConnection.getConnection();
-        // SQL-запрос для вставки данных в таблицу
         String query = "INSERT INTO \"user\" (name, phone, email, password, uuid) VALUES (?, ?, ?, ?, ?)";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setString(1, user.getName());
@@ -48,10 +62,29 @@ public class UserDao {
         preparedStatement.setString(4, user.getPassword());
         preparedStatement.setString(5, user.getUuid());
 
-        // Выполнение запроса на вставку
         int rowsInserted = preparedStatement.executeUpdate();
         preparedStatement.close();
         return rowsInserted;
+    }
+
+    public static void updateUserMessage(User user, String message) throws SQLException {
+        Connection connection = DatabaseConnection.getConnection();
+        String query = "UPDATE \"user\" SET message = ? WHERE email = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setString(1, message);
+        preparedStatement.setString(2, user.getEmail());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+    }
+
+    public static void updateUserBlockingTime(User user, LocalDateTime currentTime) throws SQLException {
+        Connection connection = DatabaseConnection.getConnection();
+        String query = "UPDATE \"user\" SET blockingtime = ? WHERE email = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setObject(1, currentTime);
+        preparedStatement.setString(2, user.getEmail());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
     }
 
     public static boolean checkUserEmail(String email) throws SQLException {

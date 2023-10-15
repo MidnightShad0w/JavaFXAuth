@@ -1,5 +1,6 @@
 package com.danila.javafxauth.model;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class User {
@@ -10,18 +11,40 @@ public class User {
     private String email;
     private String password;
     private String  uuid;
+    private String message;
+    private LocalDateTime blockingTime;
+
 
     public User(String email, String password, String uuid) {
         this.email = email;
         this.password = password;
         this.uuid = uuid;
     }
-    public User(String name, String phone, String email, String password, String uuid) {
+
+    public User(String name, String phone, String email, String password, String uuid, String message, LocalDateTime blockingTime) {
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.password = password;
         this.uuid = uuid;
+        this.message = message;
+        this.blockingTime = blockingTime;
+    }
+
+    public LocalDateTime getBlockingTime() {
+        return blockingTime;
+    }
+
+    public void setBlockingTime(LocalDateTime blockingTime) {
+        this.blockingTime = blockingTime;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public String getUuid() {

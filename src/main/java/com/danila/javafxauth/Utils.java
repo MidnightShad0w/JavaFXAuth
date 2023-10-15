@@ -3,10 +3,9 @@ package com.danila.javafxauth;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class Utils {
-
-    // Метод для получения UUID
     public static String getUUID() {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("wmic", "csproduct", "get", "UUID");
@@ -24,5 +23,13 @@ public class Utils {
             e.printStackTrace();
             return null;
         }
+    }
+    public static String generateHash(String password) {
+        String salt = BCrypt.gensalt();
+        return BCrypt.hashpw(password, salt);
+    }
+
+    public static boolean checkPassword(String password, String hash) {
+        return BCrypt.checkpw(password, hash);
     }
 }

@@ -7,17 +7,36 @@
 <?import javafx.scene.layout.*?>
 
 <?import javafx.scene.text.Font?>
+<?import javafx.geometry.Insets?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.danila.javafxauth.controllers.SuccessPageController"
             prefHeight="400.0" prefWidth="600.0">
     <children>
-        <Label text="Успешный вход" textFill="#00FF00" layoutX="200" layoutY="200">
+        <Label text="Успешный вход" textFill="#76ff5a" layoutX="200" layoutY="200">
             <font>
-                <Font size="24.0" />
+                <Font size="24.0"/>
             </font>
         </Label>
-        <Button text="Назад" onAction="#backToLoginButtonAction" layoutX="10" layoutY="10" />
+        <HBox layoutX="200" layoutY="250">
+            <Label text="Добро пожаловать - "/>
+            <Label fx:id="usernameLabel"/>
+        </HBox>
+        <VBox layoutX="200" layoutY="280" >
+            <HBox VBox.vgrow="ALWAYS">
+                <Label text="Ваше сообщение: "/>
+                <Label fx:id="messageLabel" wrapText="true" maxWidth="200"/>
+            </HBox>
+        </VBox>
+        <VBox layoutX="220" layoutY="320" VBox.vgrow="ALWAYS">
+            <TextField fx:id="messageTextField"/>
+            <Button text="Отправить сообщение" onAction="#sendMessageButtonAction">
+                <VBox.margin>
+                    <Insets top="10" />
+                </VBox.margin>
+            </Button>
+        </VBox>
+        <Button text="Назад" onAction="#backToLoginButtonAction" layoutX="10" layoutY="10"/>
     </children>
 </AnchorPane>
 

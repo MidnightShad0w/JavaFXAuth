@@ -1,5 +1,8 @@
 package com.danila.javafxauth;
 
+import com.danila.javafxauth.controllers.SuccessPageController;
+
+import com.danila.javafxauth.model.User;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -26,7 +29,6 @@ public class Main extends Application {
     }
 
 
-    // Метод для перехода на страницу логирования
     public void switchToLoginPage() {
         try {
             Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("login.fxml")));
@@ -38,7 +40,6 @@ public class Main extends Application {
         }
     }
 
-    // Метод для перехода на страницу регистрации
     public void switchToRegistrationPage() {
         try {
             Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("registration.fxml")));
@@ -50,10 +51,15 @@ public class Main extends Application {
         }
     }
 
-    // Метод для перехода на страницу успешного входа
-    public void switchToSuccessPage() {
+    public void switchToSuccessPage(User user) {
         try {
-            Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("success_page.fxml")));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("success_page.fxml"));
+            Parent root = loader.load();
+
+            SuccessPageController controller = loader.getController();
+            controller.setUser(user);
+            controller.initialize(user);
+
             primaryStage.setTitle("Успех");
             primaryStage.setScene(new Scene(root, 600, 500));
             primaryStage.show();
@@ -61,7 +67,7 @@ public class Main extends Application {
             e.printStackTrace();
         }
     }
-    // Метод для перехода на страницу отказа в доступе
+
     public void switchToAccessDeniedPage() {
         try {
             Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("access_denied_page.fxml")));
