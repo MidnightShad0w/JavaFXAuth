@@ -37,11 +37,9 @@ public class LoginController {
         try {
             User checkingUser = UserDao.getUserByEmail(email);
             if (checkingUser != null) {
-                // Проверяем, не заблокирован ли пользователь
-                if (checkingUser.getBlockingTime() == null || checkingUser.getBlockingTime().plusSeconds(5).isBefore(LocalDateTime.now())) {
-                    // Если пользователь не заблокирован или блокировка истекла
+                if (checkingUser.getBlockingTime() == null ||
+                        checkingUser.getBlockingTime().plusSeconds(10).isBefore(LocalDateTime.now())) {
                     if (Utils.checkPassword(password, checkingUser.getPassword())) {
-                        // Если пароль верен
                         if (checkingUser.getUuid().equals(uuid)) {
                             messageLabel.setText("Вход выполнен успешно");
                             UserDao.updateUserBlockingTime(checkingUser, null);
@@ -52,21 +50,17 @@ public class LoginController {
                             Main.getInstance().switchToAccessDeniedPage();
                         }
                     } else {
-                        // Неверный пароль
                         messageLabel.setText("Неверный пароль");
                         loginAttempts++;
                     }
                 } else {
-                    // Пользователь заблокирован
-                    messageLabel.setText("Превышено количество попыток ввода пароля");
+                    messageLabel.setText("Превышено количество попыток ввода пароля, установлен таймер");
                 }
             } else {
-                // Неверный логин
                 messageLabel.setText("Неверный логин");
             }
 
             if (loginAttempts >= 3) {
-                // Если превышено количество попыток, блокируем пользователя
                 UserDao.updateUserBlockingTime(checkingUser, LocalDateTime.now());
             }
         } catch (SQLException e) {

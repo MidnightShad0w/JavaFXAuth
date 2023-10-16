@@ -7,13 +7,15 @@
             minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/16"
             xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.danila.javafxauth.controllers.LoginController">
     <children>
-        <VBox alignment="CENTER" layoutX="230.0" layoutY="148.0" spacing="10.0">
+        <VBox alignment="CENTER" layoutX="230.0" layoutY="148.0" spacing="10.0" maxWidth="150">
             <children>
                 <Label text="Вход"/>
                 <TextField fx:id="emailField" promptText="Логин"/>
                 <PasswordField fx:id="passwordField" promptText="Пароль"/>
                 <Button text="Войти" onAction="#loginButtonAction"/>
-                <Label fx:id="messageLabel" text=""/>
+                <HBox alignment="CENTER">
+                    <Label fx:id="messageLabel" text="" wrapText="true"/>
+                </HBox>
                 <Button text="Регистрация" onAction="#registrationButtonAction" />
             </children>
         </VBox>
