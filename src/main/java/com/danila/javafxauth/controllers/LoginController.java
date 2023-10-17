@@ -35,35 +35,13 @@ public class LoginController {
 
         try {
             User checkingUser = UserDao.getUserByEmail(email);
-            if (checkingUser != null) {
-                if (checkingUser.getBlockingTime() == null ||
-                        checkingUser.getBlockingTime().plusSeconds(10).isBefore(LocalDateTime.now())) {
-                    if (Utils.checkPassword(password, checkingUser.getPassword())) {
-                        if (checkingUser.getUuid().equals(uuid)) {
-                            messageLabel.setText("Вход выполнен успешно");
-                            UserDao.updateUserBlockingTime(checkingUser, null);
-                            loginAttempts = 0;
-                            Main.getInstance().switchToSuccessPage(checkingUser);
-                        } else {
-                            messageLabel.setText("Доступ запрещен");
-                            Main.getInstance().switchToAccessDeniedPage();
-                        }
-                    } else {
-                        messageLabel.setText("Неверный пароль");
-                        loginAttempts++;
-                    }
-                } else {
-                    messageLabel.setText("Нужно подождать пока не истечет время таймера");
-                    loginAttempts = 0;
-                }
-                if (loginAttempts > 3) {
-                    UserDao.updateUserBlockingTime(checkingUser, LocalDateTime.now());
-                    messageLabel.setText("Превышено количество попыток ввода пароля, установлен таймер");
-                }
-            } else {
-                messageLabel.setText("Неверный логин");
-            }
-
+            validateUserAuthorization(checkingUser, password, uuid);
+            messageLabel.setText("Вход выполнен успешно");
+            UserDao.updateUserBlockingTime(checkingUser, null);
+            loginAttempts = 0;
+            Main.getInstance().switchToSuccessPage(checkingUser);
+        } catch (InvalidAuthorizationException e) {
+            messageLabel.setText(e.getMessage());
         } catch (SQLException e) {
             e.printStackTrace();
             messageLabel.setText("Ошибка базы данных");
@@ -84,6 +62,16 @@ public class LoginController {
             throw new InvalidAuthorizationException("Нужно подождать пока не истечет время таймера");
         }
 
+        try {
+            if (loginAttempts >= 3) {
+                UserDao.updateUserBlockingTime(checkingUser, LocalDateTime.now());
+                throw new InvalidAuthorizationException("Превышено количество попыток ввода пароля, установлен таймер");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new InvalidAuthorizationException("Ошибка базы данных");
+        }
+
         if (!Utils.checkPassword(password, checkingUser.getPassword())) {
             loginAttempts++;
             throw new InvalidAuthorizationException("Неверный пароль");
@@ -93,17 +81,6 @@ public class LoginController {
             Main.getInstance().switchToAccessDeniedPage();
             throw new InvalidAuthorizationException("Доступ запрещен");
         }
-
-        try {
-            if (loginAttempts > 3) {
-                UserDao.updateUserBlockingTime(checkingUser, LocalDateTime.now());
-                throw new InvalidAuthorizationException("Превышено количество попыток ввода пароля, установлен таймер");
-            }
-        } catch (SQLException e) {
-            messageLabel.setText("Ошибка базы данных");
-        }
-
-
     }
 
 
