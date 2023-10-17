@@ -3,10 +3,9 @@ package com.danila.javafxauth.controllers;
 import com.danila.javafxauth.Main;
 import com.danila.javafxauth.Utils;
 import com.danila.javafxauth.dao.UserDao;
-import com.danila.javafxauth.database.DatabaseConnection;
+import com.danila.javafxauth.exceptions.InvalidAuthorizationException;
 import com.danila.javafxauth.model.User;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -33,7 +32,7 @@ public class LoginController {
         String email = emailField.getText();
         String password = passwordField.getText();
         String uuid = Utils.getUUID();
-// TODO - доделать проверку паролей, не работает если зайти-выйти - ввести верно
+
         try {
             User checkingUser = UserDao.getUserByEmail(email);
             if (checkingUser != null) {
@@ -54,19 +53,57 @@ public class LoginController {
                         loginAttempts++;
                     }
                 } else {
+                    messageLabel.setText("Нужно подождать пока не истечет время таймера");
+                    loginAttempts = 0;
+                }
+                if (loginAttempts > 3) {
+                    UserDao.updateUserBlockingTime(checkingUser, LocalDateTime.now());
                     messageLabel.setText("Превышено количество попыток ввода пароля, установлен таймер");
                 }
             } else {
                 messageLabel.setText("Неверный логин");
             }
 
-            if (loginAttempts >= 3) {
-                UserDao.updateUserBlockingTime(checkingUser, LocalDateTime.now());
-            }
         } catch (SQLException e) {
             e.printStackTrace();
             messageLabel.setText("Ошибка базы данных");
         }
+    }
+
+    private void validateUserAuthorization(User checkingUser, String password, String uuid) throws InvalidAuthorizationException {
+
+        if (checkingUser == null) {
+            throw new InvalidAuthorizationException("Неверный логин");
+        }
+
+        if (checkingUser.getBlockingTime() != null &&
+                checkingUser.getBlockingTime()
+                        .plusSeconds(10)
+                        .isAfter(LocalDateTime.now())) {
+            loginAttempts = 0;
+            throw new InvalidAuthorizationException("Нужно подождать пока не истечет время таймера");
+        }
+
+        if (!Utils.checkPassword(password, checkingUser.getPassword())) {
+            loginAttempts++;
+            throw new InvalidAuthorizationException("Неверный пароль");
+        }
+
+        if (!checkingUser.getUuid().equals(uuid)) {
+            Main.getInstance().switchToAccessDeniedPage();
+            throw new InvalidAuthorizationException("Доступ запрещен");
+        }
+
+        try {
+            if (loginAttempts > 3) {
+                UserDao.updateUserBlockingTime(checkingUser, LocalDateTime.now());
+                throw new InvalidAuthorizationException("Превышено количество попыток ввода пароля, установлен таймер");
+            }
+        } catch (SQLException e) {
+            messageLabel.setText("Ошибка базы данных");
+        }
+
+
     }
 
 
