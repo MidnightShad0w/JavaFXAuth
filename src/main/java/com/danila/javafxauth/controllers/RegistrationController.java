@@ -67,11 +67,12 @@ public class RegistrationController {
         String password = passwordField.getText();
         String hashedPassword = Utils.generateHash(password);
         String uuid = Utils.getUUID();
+        String credentials = "view";
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
 
-        var user = new User(name, phone, email, hashedPassword, uuid, null, null);
+        var user = new User(name, phone, email, hashedPassword, uuid, null, null, credentials);
 
         try {
             validateUser(user, password);

@@ -1,6 +1,8 @@
 //package com.danila.javafxauth;
 //
+//import javafx.event.ActionEvent;
 //import javafx.fxml.FXMLLoader;
+//import javafx.scene.Node;
 //import javafx.scene.Parent;
 //import javafx.scene.Scene;
 //import javafx.stage.Stage;
@@ -9,11 +11,13 @@
 //import java.util.Objects;
 //
 //public class NavigationManager {
-//    private Stage primaryStage;
+//    private Stage stage;
+//    private Scene scene;
+//    private Parent root;
 //    private static NavigationManager instance;
 //
 //    private NavigationManager() {
-//        primaryStage = new Stage();
+//        stage = new Stage();
 //    }
 //
 //    public static NavigationManager getNavigationManagerInstance(Stage primaryStage) {
@@ -23,41 +27,35 @@
 //        return instance;
 //    }
 //
-//    public Stage getPrimaryStage() {
-//        return primaryStage;
+//    public Stage getStage() {
+//        return stage;
 //    }
 //
 //    // Метод для перехода на страницу логирования
-//    public void switchToLoginPage() {
-//        try {
-//            Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("login.fxml")));
-//            primaryStage.setTitle("Вход");
-//            primaryStage.setScene(new Scene(root, 600, 500));
-//            primaryStage.show();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+//    public void switchToLoginPage(ActionEvent event) throws IOException {
+//        root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("login.fxml")));
+//        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+//        scene = new Scene(root);
+//        stage.setScene(scene);
+//        stage.show();
 //    }
 //
 //    // Метод для перехода на страницу регистрации
-//    public void switchToRegistrationPage() {
-//        try {
-//            Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("registration.fxml")));
-//            primaryStage.setTitle("Регистрация");
-//            primaryStage.setScene(new Scene(root, 600, 500));
-//            primaryStage.show();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+//    public void switchToRegistrationPage(ActionEvent event) throws IOException {
+//        root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("registration.fxml")));
+//        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+//        scene = new Scene(root);
+//        stage.setScene(scene);
+//        stage.show();
 //    }
 //
 //    // Метод для перехода на страницу успешного входа
 //    public void switchToSuccessPage() {
 //        try {
 //            Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("success_page.fxml")));
-//            primaryStage.setTitle("Успех");
-//            primaryStage.setScene(new Scene(root, 600, 500));
-//            primaryStage.show();
+//            stage.setTitle("Успех");
+//            stage.setScene(new Scene(root, 600, 500));
+//            stage.show();
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
@@ -67,9 +65,9 @@
 //    public void switchToAccessDeniedPage() {
 //        try {
 //            Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("access_denied_page.fxml")));
-//            primaryStage.setTitle("Отказ");
-//            primaryStage.setScene(new Scene(root, 600, 500));
-//            primaryStage.show();
+//            stage.setTitle("Отказ");
+//            stage.setScene(new Scene(root, 600, 500));
+//            stage.show();
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }

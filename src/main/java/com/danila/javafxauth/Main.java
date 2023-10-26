@@ -61,7 +61,7 @@ public class Main extends Application {
             controller.initialize(user);
 
             primaryStage.setTitle("Успех");
-            primaryStage.setScene(new Scene(root, 600, 500));
+            primaryStage.setScene(new Scene(root, 800, 600));
             primaryStage.show();
         } catch (IOException e) {
             e.printStackTrace();

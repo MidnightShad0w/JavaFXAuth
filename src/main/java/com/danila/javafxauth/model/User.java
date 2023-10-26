@@ -13,7 +13,15 @@ public class User {
     private String  uuid;
     private String message;
     private LocalDateTime blockingTime;
+    private String credentials;
 
+    public String getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(String credentials) {
+        this.credentials = credentials;
+    }
 
     public User(String email, String password, String uuid) {
         this.email = email;
@@ -21,7 +29,7 @@ public class User {
         this.uuid = uuid;
     }
 
-    public User(String name, String phone, String email, String password, String uuid, String message, LocalDateTime blockingTime) {
+    public User(String name, String phone, String email, String password, String uuid, String message, LocalDateTime blockingTime, String credentials) {
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -29,6 +37,7 @@ public class User {
         this.uuid = uuid;
         this.message = message;
         this.blockingTime = blockingTime;
+        this.credentials = credentials;
     }
 
     public LocalDateTime getBlockingTime() {

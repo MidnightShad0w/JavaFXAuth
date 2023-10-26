@@ -43,8 +43,9 @@ public class UserDao {
             String uuid = uuidObject.toString();
             String message = resultSet.getString("message");
             Timestamp blockingTimeTimestamp = resultSet.getTimestamp("blockingTime");
+            String credentials = resultSet.getString("credentials");
             LocalDateTime blockingTime = blockingTimeTimestamp != null ? blockingTimeTimestamp.toLocalDateTime() : null;
-            User retrievedUser = new User(name,phone, email, password, uuid, message, blockingTime);
+            User retrievedUser = new User(name,phone, email, password, uuid, message, blockingTime, credentials);
             preparedStatement.close();
             return retrievedUser;
         } else {
@@ -54,13 +55,14 @@ public class UserDao {
     }
     public static int createUser(User user) throws SQLException {
         Connection connection = DatabaseConnection.getConnection();
-        String query = "INSERT INTO \"user\" (name, phone, email, password, uuid) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO \"user\" (name, phone, email, password, uuid, credentials) VALUES (?, ?, ?, ?, ?, ?)";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setString(1, user.getName());
         preparedStatement.setString(2, user.getPhone());
         preparedStatement.setString(3, user.getEmail());
         preparedStatement.setString(4, user.getPassword());
         preparedStatement.setString(5, user.getUuid());
+        preparedStatement.setString(6, user.getCredentials());
 
         int rowsInserted = preparedStatement.executeUpdate();
         preparedStatement.close();
