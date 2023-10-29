@@ -16,15 +16,15 @@ import java.util.Objects;
 
 public class Main extends Application {
     private static Main instance;
-    private Stage primaryStage; // Для хранения ссылки на главное окно
+    private Stage primaryStage;
     public static Main getInstance() {
         return instance;
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        this.primaryStage = primaryStage; // Сохраняем ссылку на главное окно
-        instance = this; // Сохраняем текущий экземпляр Main для вызова глобальных методов
+        this.primaryStage = primaryStage;
+        instance = this;
         switchToLoginPage();
     }
 
