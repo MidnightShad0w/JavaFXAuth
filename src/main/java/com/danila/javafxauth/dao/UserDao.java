@@ -35,6 +35,7 @@ public class UserDao {
         preparedStatement.setString(1, checkingEmail);
         ResultSet resultSet = preparedStatement.executeQuery();
         if (resultSet.next()) {
+            int id = resultSet.getInt("user_id");
             String name = resultSet.getString("name");
             String phone = resultSet.getString("phone");
             String email = resultSet.getString("email");
@@ -45,7 +46,7 @@ public class UserDao {
             Timestamp blockingTimeTimestamp = resultSet.getTimestamp("blockingTime");
             String credentials = resultSet.getString("credentials");
             LocalDateTime blockingTime = blockingTimeTimestamp != null ? blockingTimeTimestamp.toLocalDateTime() : null;
-            User retrievedUser = new User(name,phone, email, password, uuid, message, blockingTime, credentials);
+            User retrievedUser = new User(id, name,phone, email, password, uuid, message, blockingTime, credentials);
             preparedStatement.close();
             return retrievedUser;
         } else {

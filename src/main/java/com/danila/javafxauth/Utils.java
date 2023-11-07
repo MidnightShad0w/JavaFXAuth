@@ -24,12 +24,12 @@ public class Utils {
             return null;
         }
     }
-    public static String generateHash(String password) {
+    public static String generateHash(String str) {
         String salt = BCrypt.gensalt();
-        return BCrypt.hashpw(password, salt);
+        return BCrypt.hashpw(str, salt);
     }
 
-    public static boolean checkPassword(String password, String hash) {
-        return BCrypt.checkpw(password, hash);
+    public static boolean checkHash(String str, String hash) {
+        return BCrypt.checkpw(str, hash);
     }
 }

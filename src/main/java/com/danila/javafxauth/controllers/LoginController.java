@@ -72,7 +72,7 @@ public class LoginController {
             throw new InvalidAuthorizationException("Ошибка базы данных");
         }
 
-        if (!Utils.checkPassword(password, checkingUser.getPassword())) {
+        if (!Utils.checkHash(password, checkingUser.getPassword())) {
             loginAttempts++;
             throw new InvalidAuthorizationException("Неверный пароль");
         }
