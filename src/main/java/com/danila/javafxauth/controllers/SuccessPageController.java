@@ -36,6 +36,7 @@ public class SuccessPageController {
     public void setUser(User user) {
         this.user = user;
     }
+
     public void initialize(User user) {
         usernameLabel.setText(user.getName());
         messageLabel.setText(user.getMessage());
@@ -99,7 +100,7 @@ public class SuccessPageController {
 
     private boolean validateFile(File selectedFile) {
         try {
-            FileInfo checkingFileInfo = FileInfoDao.getUserFileInfo(user.getEmail(), selectedFile);
+            FileInfo checkingFileInfo = FileInfoDao.getUserFileInfo(selectedFile);
             if (checkingFileInfo == null) {
                 return true;
             }
@@ -115,41 +116,40 @@ public class SuccessPageController {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
 
-        if (selectedFile != null) {
-            if (user.getCredentials().equals("edit")) {
-                try {
-                    String fileContent = fileContentTextArea.getText();
-                    Files.writeString(selectedFile.toPath(), fileContent);
-                    FileInfo currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath(), user.getId());
-                    if (FileInfoDao.setUserFile(currentFileInfo) > 0) {
-                        alert.setTitle("Успех");
-                        alert.setContentText("Файл успешно сохранён");
-                        alert.showAndWait();
-                    } else {
-                        alert.setTitle("Ошибка");
-                        alert.setContentText("Ошибка при сохранении файла");
-                        alert.showAndWait();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+        if (user.getCredentials().equals("edit")) {
+            try {
+                String fileContent = fileContentTextArea.getText();
+                Files.writeString(selectedFile.toPath(), fileContent);
+                FileInfo currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath(), user.getId());
+                if (FileInfoDao.setUserFile(currentFileInfo, user) > 0) {
+                    alert.setTitle("Успех");
+                    alert.setContentText("Файл успешно сохранён");
+                    alert.showAndWait();
+                } else {
                     alert.setTitle("Ошибка");
                     alert.setContentText("Ошибка при сохранении файла");
                     alert.showAndWait();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    alert.setTitle("Ошибка");
-                    alert.setContentText("Ошибка базы данных");
-                    alert.showAndWait();
                 }
-            } else {
-                alert = new Alert(Alert.AlertType.ERROR);
-                alert.setHeaderText(null);
-                alert.setTitle("Отказано в доступе");
-                alert.setContentText("Вы не имеете достаточно прав для редактирования файла");
+            } catch (IOException e) {
+                e.printStackTrace();
+                alert.setTitle("Ошибка");
+                alert.setContentText("Ошибка при сохранении файла");
                 alert.showAndWait();
-                Main.getInstance().switchToLoginPage();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                alert.setTitle("Ошибка");
+                alert.setContentText("Ошибка базы данных");
+                alert.showAndWait();
             }
+        } else {
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setHeaderText(null);
+            alert.setTitle("Отказано в доступе");
+            alert.setContentText("Вы не имеете достаточно прав для редактирования файла");
+            alert.showAndWait();
+            Main.getInstance().switchToLoginPage();
         }
+
     }
 
 

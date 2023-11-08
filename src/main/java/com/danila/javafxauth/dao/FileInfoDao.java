@@ -2,28 +2,31 @@ package com.danila.javafxauth.dao;
 
 import com.danila.javafxauth.database.DatabaseConnection;
 import com.danila.javafxauth.model.FileInfo;
+import com.danila.javafxauth.model.User;
 
 import java.io.File;
 import java.sql.*;
 import java.time.LocalDateTime;
 
 public class FileInfoDao {
-    public static int setUserFile(FileInfo newFileInfo) throws SQLException {
+    public static int setUserFile(FileInfo newFileInfo, User user) throws SQLException {
         Connection connection = DatabaseConnection.getConnection();
 
-        String checkQuery = "SELECT COUNT(*) FROM file WHERE filepath = ?";
+        String checkQuery = "SELECT COUNT(*) FROM file WHERE filepath = ? AND user_id = ?";
         PreparedStatement checkStatement = connection.prepareStatement(checkQuery);
         checkStatement.setString(1, newFileInfo.getFilePath());
+        checkStatement.setInt(2, user.getId());
         ResultSet checkResult = checkStatement.executeQuery();
         checkResult.next();
         int rowCount = checkResult.getInt(1);
 
         if (rowCount > 0) {
-            String updateQuery = "UPDATE file SET filehash = ?, savetime = ? WHERE filepath = ?";
+            String updateQuery = "UPDATE file SET filehash = ?, savetime = ? WHERE filepath = ? AND user_id = ?";
             PreparedStatement updateStatement = connection.prepareStatement(updateQuery);
             updateStatement.setString(1, newFileInfo.getFileHash());
             updateStatement.setObject(2, newFileInfo.getSaveTime());
             updateStatement.setString(3, newFileInfo.getFilePath());
+            updateStatement.setInt(4, user.getId());
             int rowsUpdated = updateStatement.executeUpdate();
             updateStatement.close();
             return rowsUpdated;
@@ -41,12 +44,11 @@ public class FileInfoDao {
     }
 
 
-    public static FileInfo getUserFileInfo(String userEmail, File file) throws SQLException {
+    public static FileInfo getUserFileInfo(File file) throws SQLException {
         Connection connection = DatabaseConnection.getConnection();
-        String query = "SELECT * FROM \"user\" u JOIN file f ON u.user_id = f.user_id\n WHERE u.email = ? AND f.filepath = ?";
+        String query = "SELECT f.* FROM \"user\" u JOIN file f ON u.user_id = f.user_id\n WHERE f.filepath = ? ORDER BY f.savetime DESC LIMIT 1";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setString(1, userEmail);
-        preparedStatement.setString(2, file.getAbsolutePath());
+        preparedStatement.setString(1, file.getAbsolutePath());
         ResultSet resultSet = preparedStatement.executeQuery();
         if (resultSet.next()) {
             String fileHash = resultSet.getString("filehash");
