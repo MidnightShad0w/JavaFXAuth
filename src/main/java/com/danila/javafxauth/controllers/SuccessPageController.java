@@ -9,12 +9,17 @@ import javafx.fxml.FXML;
 import com.danila.javafxauth.Main;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
+import net.lingala.zip4j.model.ZipParameters;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.zip.ZipException;
 
 public class SuccessPageController {
     @FXML
@@ -32,6 +37,8 @@ public class SuccessPageController {
     private Label messageLabel;
 
     private User user;
+    private FileChannel fileChannel; // Переменная для хранения FileChannel
+    private FileLock fileLock; // Переменная для хранения FileLock
 
     public void setUser(User user) {
         this.user = user;
@@ -58,12 +65,13 @@ public class SuccessPageController {
     private void chooseFileButtonAction() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите текстовый файл");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Текстовые файлы", "*.txt", "*.secretext"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Текстовые файлы", "*.txt", "*.secretext", "*.zip"));
         selectedFile = fileChooser.showOpenDialog(null);
 
         if (selectedFile != null) {
+            String fileContent = "";
+            String fileName = selectedFile.getName();
             try {
-                String fileName = selectedFile.getName();
                 if (fileName.toLowerCase().endsWith(".txt")) {
                     fileName = fileName.substring(0, fileName.length() - 4);
                     String newFileName = fileName + ".secretext";
@@ -75,18 +83,20 @@ public class SuccessPageController {
                         throw new IOException("Ошибка переименования файла");
                     }
                 }
-            } catch (IOException e) {
+                if (selectedFile.getAbsolutePath().endsWith(".zip")) {
+                    fileName = selectedFile.getName();
+                    fileName = fileName.substring(0, fileName.length() - 4);
+                    int lastModifiedUserFilePassword = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath()).getUserId();
+                    fileContent = extractFileContentFromZip(selectedFile.getAbsolutePath(), fileName, lastModifiedUserFilePassword);
+                } else {
+                    fileContent = new String(Files.readAllBytes(selectedFile.toPath()));
+                }
+            } catch (IOException | SQLException e) {
                 e.printStackTrace();
             }
-
-            if (validateFile(selectedFile)) {
-                try {
-                    fileNameLabel.setText(selectedFile.getName());
-                    String fileContent = Files.readString(selectedFile.toPath());
-                    fileContentTextArea.setText(fileContent);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            if (validateFile(selectedFile, fileContent)) {
+                fileNameLabel.setText(selectedFile.getName());
+                fileContentTextArea.setText(fileContent);
             } else {
                 fileNameLabel.setText("");
                 fileContentTextArea.setText("");
@@ -97,17 +107,94 @@ public class SuccessPageController {
             }
         }
     }
+    private void releaseFileLock() {
+        if (fileLock != null) {
+            try {
+                fileLock.release();
+            } catch (IOException e) {
+                // Обработка ошибок
+            }
+            fileLock = null;
+        }
+        if (fileChannel != null) {
+            try {
+                fileChannel.close();
+            } catch (IOException e) {
+                // Обработка ошибок
+            }
+            fileChannel = null;
+        }
+    }
 
-    private boolean validateFile(File selectedFile) {
+    // Метод для блокировки выбранного файла
+    private void lockSelectedFile() {
+        if (selectedFile != null) {
+            try {
+                fileChannel = new RandomAccessFile(selectedFile, "rw").getChannel();
+                fileLock = fileChannel.lock();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private String extractFileContentFromZip(String zipFilePath, String entryName, Integer password) {
         try {
-            FileInfo checkingFileInfo = FileInfoDao.getUserFileInfo(selectedFile);
+            ZipFile zipFile = new ZipFile(zipFilePath);
+
+            if (zipFile.isEncrypted()) {
+                zipFile.setPassword(password.toString().toCharArray());
+            }
+
+            FileHeader fileHeader = zipFile.getFileHeader(entryName);
+
+            if (fileHeader != null) {
+                InputStream inputStream = zipFile.getInputStream(fileHeader);
+                String fileContent = new String(inputStream.readAllBytes());
+                inputStream.close();
+                return fileContent;
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setHeaderText(null);
+            alert.setContentText("Ошибка открытия файла");
+            alert.showAndWait();
+            return null;
+        }
+    }
+
+    private boolean validateFile(File selectedFile, String fileContent) {
+        try {
+            FileInfo checkingFileInfo = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath());
             if (checkingFileInfo == null) {
                 return true;
             }
-            return Utils.checkHash(Files.readString(selectedFile.toPath()), checkingFileInfo.getFileHash());
-        } catch (SQLException | IOException e) {
+            return Utils.checkHash(fileContent, checkingFileInfo.getFileHash());
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+    private void updateFileContentInZip(String zipFilePath, String entryName, String fileContent, Integer password) throws IOException {
+        try {
+            String subEntryName = entryName.substring(0, entryName.length() - 4);
+            ZipFile zipFile = new ZipFile(zipFilePath);
+            if (password != null) {
+                zipFile.setPassword(password.toString().toCharArray());
+            }
+
+            ZipParameters parameters = new ZipParameters();
+            parameters.setFileNameInZip(subEntryName);
+
+
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent.getBytes());
+            zipFile.addStream(inputStream, parameters);
+            zipFile.close();
+        } catch (ZipException e) {
+            e.printStackTrace();
+            throw new IOException("Ошибка при записи в архив", e);
         }
     }
 
@@ -119,8 +206,16 @@ public class SuccessPageController {
         if (user.getCredentials().equals("edit")) {
             try {
                 String fileContent = fileContentTextArea.getText();
-                Files.writeString(selectedFile.toPath(), fileContent);
-                FileInfo currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath(), user.getId());
+                FileInfo currentFileInfo;
+                if (!selectedFile.getName().endsWith(".zip")) {
+                    Files.writeString(selectedFile.toPath(), fileContent);
+                    Utils.zipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
+                    currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath() + ".zip", user.getId());
+                } else {
+                    Utils.zipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
+                    currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath(), user.getId());
+                }
+
                 if (FileInfoDao.setUserFile(currentFileInfo, user) > 0) {
                     alert.setTitle("Успех");
                     alert.setContentText("Файл успешно сохранён");
@@ -130,6 +225,11 @@ public class SuccessPageController {
                     alert.setContentText("Ошибка при сохранении файла");
                     alert.showAndWait();
                 }
+            } catch (ZipException e) {
+                e.printStackTrace();
+                alert.setTitle("Ошибка");
+                alert.setContentText("Не удалось архивировать файл");
+                alert.showAndWait();
             } catch (IOException e) {
                 e.printStackTrace();
                 alert.setTitle("Ошибка");

@@ -44,11 +44,11 @@ public class FileInfoDao {
     }
 
 
-    public static FileInfo getUserFileInfo(File file) throws SQLException {
+    public static FileInfo getUserFileInfoByPath(String path) throws SQLException {
         Connection connection = DatabaseConnection.getConnection();
         String query = "SELECT f.* FROM \"user\" u JOIN file f ON u.user_id = f.user_id\n WHERE f.filepath = ? ORDER BY f.savetime DESC LIMIT 1";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setString(1, file.getAbsolutePath());
+        preparedStatement.setString(1, path);
         ResultSet resultSet = preparedStatement.executeQuery();
         if (resultSet.next()) {
             String fileHash = resultSet.getString("filehash");

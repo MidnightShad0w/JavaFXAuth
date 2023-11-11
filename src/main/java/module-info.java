@@ -3,6 +3,7 @@ module com.danila.javafxauth {
     requires javafx.fxml;
     requires java.sql;
     requires jbcrypt;
+    requires zip4j;
 
 
     opens com.danila.javafxauth to javafx.fxml;
