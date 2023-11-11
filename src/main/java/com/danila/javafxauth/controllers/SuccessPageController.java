@@ -11,7 +11,6 @@ import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
-import net.lingala.zip4j.model.ZipParameters;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -37,8 +36,8 @@ public class SuccessPageController {
     private Label messageLabel;
 
     private User user;
-    private FileChannel fileChannel; // Переменная для хранения FileChannel
-    private FileLock fileLock; // Переменная для хранения FileLock
+    private FileChannel fileChannel;
+    private FileLock fileLock;
 
     public void setUser(User user) {
         this.user = user;
@@ -94,7 +93,7 @@ public class SuccessPageController {
             } catch (IOException | SQLException e) {
                 e.printStackTrace();
             }
-            if (validateFile(selectedFile, fileContent)) {
+            if (validateFileHash(selectedFile, fileContent)) {
                 fileNameLabel.setText(selectedFile.getName());
                 fileContentTextArea.setText(fileContent);
             } else {
@@ -112,7 +111,6 @@ public class SuccessPageController {
             try {
                 fileLock.release();
             } catch (IOException e) {
-                // Обработка ошибок
             }
             fileLock = null;
         }
@@ -120,14 +118,12 @@ public class SuccessPageController {
             try {
                 fileChannel.close();
             } catch (IOException e) {
-                // Обработка ошибок
             }
             fileChannel = null;
         }
     }
 
-    // Метод для блокировки выбранного файла
-    private void lockSelectedFile() {
+    private void lockFile() {
         if (selectedFile != null) {
             try {
                 fileChannel = new RandomAccessFile(selectedFile, "rw").getChannel();
@@ -165,7 +161,7 @@ public class SuccessPageController {
         }
     }
 
-    private boolean validateFile(File selectedFile, String fileContent) {
+    private boolean validateFileHash(File selectedFile, String fileContent) {
         try {
             FileInfo checkingFileInfo = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath());
             if (checkingFileInfo == null) {
@@ -177,42 +173,21 @@ public class SuccessPageController {
             return false;
         }
     }
-    private void updateFileContentInZip(String zipFilePath, String entryName, String fileContent, Integer password) throws IOException {
-        try {
-            String subEntryName = entryName.substring(0, entryName.length() - 4);
-            ZipFile zipFile = new ZipFile(zipFilePath);
-            if (password != null) {
-                zipFile.setPassword(password.toString().toCharArray());
-            }
-
-            ZipParameters parameters = new ZipParameters();
-            parameters.setFileNameInZip(subEntryName);
-
-
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent.getBytes());
-            zipFile.addStream(inputStream, parameters);
-            zipFile.close();
-        } catch (ZipException e) {
-            e.printStackTrace();
-            throw new IOException("Ошибка при записи в архив", e);
-        }
-    }
 
     @FXML
     private void saveFileButtonAction() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
-
         if (user.getCredentials().equals("edit")) {
             try {
                 String fileContent = fileContentTextArea.getText();
                 FileInfo currentFileInfo;
                 if (!selectedFile.getName().endsWith(".zip")) {
                     Files.writeString(selectedFile.toPath(), fileContent);
-                    Utils.zipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
+                    Utils.updateZipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
                     currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath() + ".zip", user.getId());
                 } else {
-                    Utils.zipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
+                    Utils.updateZipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
                     currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath(), user.getId());
                 }
 

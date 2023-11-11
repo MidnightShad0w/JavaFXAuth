@@ -38,7 +38,7 @@ public class Utils {
         return BCrypt.checkpw(str, hash);
     }
 
-    public static void zipFile(String filePath, String entryName, String newContent, Integer newPassword, Path pathToDelete) throws ZipException {
+    public static void updateZipFile(String filePath, String entryName, String newContent, Integer newPassword, Path pathToDelete) throws IOException {
         try {
             Files.delete(pathToDelete);
             if (entryName.endsWith(".zip")) {
@@ -61,10 +61,8 @@ public class Utils {
             ZipFile zipFile = new ZipFile(zipName, password.toCharArray());
             zipFile.addFile(tempFile, zipParameters);
             zipFile.close();
-            if (tempFile.delete()) {
-                System.out.println("временный файл удален");
-            } else {
-                System.out.println("не удалось удалить временный файл");
+            if (!tempFile.delete()) {
+                throw new IOException("Не удалось удалить файл" + tempFile);
             }
         } catch (ZipException e) {
             throw new ZipException("Не удалось архивировать файл" + e);
