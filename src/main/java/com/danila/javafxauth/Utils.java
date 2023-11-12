@@ -66,8 +66,6 @@ public class Utils {
             }
         } catch (ZipException e) {
             throw new ZipException("Не удалось архивировать файл" + e);
-        } catch (IOException e) {
-            throw new RuntimeException("Не удалось освободить ресурсы" + e);
         }
     }
 }

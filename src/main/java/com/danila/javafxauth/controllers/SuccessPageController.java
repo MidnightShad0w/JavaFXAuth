@@ -68,7 +68,9 @@ public class SuccessPageController {
         selectedFile = fileChooser.showOpenDialog(null);
 
         if (selectedFile != null) {
+            releaseFileLock();
             String fileContent = "";
+            int lastModifiedUserFilePassword;
             String fileName = selectedFile.getName();
             try {
                 if (fileName.toLowerCase().endsWith(".txt")) {
@@ -85,10 +87,19 @@ public class SuccessPageController {
                 if (selectedFile.getAbsolutePath().endsWith(".zip")) {
                     fileName = selectedFile.getName();
                     fileName = fileName.substring(0, fileName.length() - 4);
-                    int lastModifiedUserFilePassword = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath()).getUserId();
+                    FileInfo checkingFileInfo = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath());
+                    if (checkingFileInfo == null) {
+                        lastModifiedUserFilePassword = user.getId();
+                    } else {
+                        lastModifiedUserFilePassword = checkingFileInfo.getUserId();
+                    }
                     fileContent = extractFileContentFromZip(selectedFile.getAbsolutePath(), fileName, lastModifiedUserFilePassword);
+                    Utils.updateZipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, lastModifiedUserFilePassword, selectedFile.toPath());
                 } else {
                     fileContent = new String(Files.readAllBytes(selectedFile.toPath()));
+                    lastModifiedUserFilePassword = user.getId();
+                    Utils.updateZipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, lastModifiedUserFilePassword, selectedFile.toPath());
+                    selectedFile = new File(selectedFile.getAbsolutePath() + ".zip");
                 }
             } catch (IOException | SQLException e) {
                 e.printStackTrace();
@@ -96,6 +107,7 @@ public class SuccessPageController {
             if (validateFileHash(selectedFile, fileContent)) {
                 fileNameLabel.setText(selectedFile.getName());
                 fileContentTextArea.setText(fileContent);
+                lockFile();
             } else {
                 fileNameLabel.setText("");
                 fileContentTextArea.setText("");
@@ -106,11 +118,13 @@ public class SuccessPageController {
             }
         }
     }
+
     private void releaseFileLock() {
         if (fileLock != null) {
             try {
                 fileLock.release();
             } catch (IOException e) {
+                e.printStackTrace();
             }
             fileLock = null;
         }
@@ -118,6 +132,7 @@ public class SuccessPageController {
             try {
                 fileChannel.close();
             } catch (IOException e) {
+                e.printStackTrace();
             }
             fileChannel = null;
         }
@@ -133,6 +148,7 @@ public class SuccessPageController {
             }
         }
     }
+
     private String extractFileContentFromZip(String zipFilePath, String entryName, Integer password) {
         try {
             ZipFile zipFile = new ZipFile(zipFilePath);
@@ -178,19 +194,12 @@ public class SuccessPageController {
     private void saveFileButtonAction() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
+        releaseFileLock();
         if (user.getCredentials().equals("edit")) {
             try {
                 String fileContent = fileContentTextArea.getText();
-                FileInfo currentFileInfo;
-                if (!selectedFile.getName().endsWith(".zip")) {
-                    Files.writeString(selectedFile.toPath(), fileContent);
-                    Utils.updateZipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
-                    currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath() + ".zip", user.getId());
-                } else {
-                    Utils.updateZipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
-                    currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath(), user.getId());
-                }
-
+                FileInfo currentFileInfo = new FileInfo(Utils.generateHash(fileContent), LocalDateTime.now(), selectedFile.getAbsolutePath(), user.getId());
+                Utils.updateZipFile(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, user.getId(), selectedFile.toPath());
                 if (FileInfoDao.setUserFile(currentFileInfo, user) > 0) {
                     alert.setTitle("Успех");
                     alert.setContentText("Файл успешно сохранён");
@@ -215,8 +224,11 @@ public class SuccessPageController {
                 alert.setTitle("Ошибка");
                 alert.setContentText("Ошибка базы данных");
                 alert.showAndWait();
+            } finally {
+                lockFile();
             }
         } else {
+            releaseFileLock();
             alert = new Alert(Alert.AlertType.ERROR);
             alert.setHeaderText(null);
             alert.setTitle("Отказано в доступе");
