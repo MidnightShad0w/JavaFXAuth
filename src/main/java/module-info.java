@@ -5,7 +5,6 @@ module com.danila.javafxauth {
     requires jbcrypt;
     requires zip4j;
 
-
     opens com.danila.javafxauth to javafx.fxml;
     exports com.danila.javafxauth;
     exports com.danila.javafxauth.controllers;

@@ -7,8 +7,8 @@ import java.nio.file.Path;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.EncryptionMethod;
-import org.mindrot.jbcrypt.BCrypt;
 import net.lingala.zip4j.ZipFile;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class Utils {
     public static String getUUID() {
@@ -37,8 +37,7 @@ public class Utils {
     public static boolean checkHash(String str, String hash) {
         return BCrypt.checkpw(str, hash);
     }
-
-    public static void updateZipFile(String filePath, String entryName, String newContent, Integer newPassword, Path pathToDelete) throws IOException {
+    public static void archiveFileAndDeleteSource(String filePath, String entryName, String newContent, String newPassword, Path pathToDelete) throws IOException {
         try {
             Files.delete(pathToDelete);
             if (entryName.endsWith(".zip")) {
@@ -51,14 +50,8 @@ public class Utils {
             ZipParameters zipParameters = new ZipParameters();
             zipParameters.setEncryptFiles(true);
             zipParameters.setEncryptionMethod(EncryptionMethod.ZIP_STANDARD);
-            String password = newPassword.toString();
-            String zipName;
-            if (filePath.endsWith(".zip")) {
-                zipName = filePath;
-            } else {
-                zipName = filePath + ".zip";
-            }
-            ZipFile zipFile = new ZipFile(zipName, password.toCharArray());
+            String zipName = filePath + ".zip";
+            ZipFile zipFile = new ZipFile(zipName, newPassword.toCharArray());
             zipFile.addFile(tempFile, zipParameters);
             zipFile.close();
             if (!tempFile.delete()) {
@@ -66,6 +59,40 @@ public class Utils {
             }
         } catch (ZipException e) {
             throw new ZipException("Не удалось архивировать файл" + e);
+        }
+    }
+    public static void extractArchiveAndDeleteSource(String archivePath, String password) {
+        try {
+            extractFromArchive(archivePath, password);
+
+            File archiveFile = new File(archivePath);
+            if (archiveFile.exists()) {
+                if (archiveFile.delete()) {
+                    System.out.println("Исходный архив успешно удален.");
+                } else {
+                    System.out.println("Не удалось удалить исходный архив.");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void extractFromArchive(String archivePath, String password) throws ZipException {
+        try {
+            ZipFile zipFile = new ZipFile(archivePath);
+            if (zipFile.isEncrypted()) {
+                zipFile.setPassword(password.toCharArray());
+            }
+
+            String archiveDirectory = new File(archivePath).getParent();
+
+            zipFile.extractAll(archiveDirectory);
+            zipFile.close();
+        } catch (ZipException e) {
+            throw new ZipException("Не удалось извлечь файл из архива: " + e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
