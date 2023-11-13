@@ -71,17 +71,17 @@ public class SuccessPageController {
                 fileLock = fileChannel.tryLock();
 
                 if (fileLock != null) {
-                    System.out.println("Файловый канал открыт");
+                    System.out.println("Open: Файловый канал открыт");
                 } else {
-                    throw new IOException("Не удалось получить блокировку файла. Возможно, файл уже открыт другим процессом.");
+                    throw new IOException("Open: Не удалось получить блокировку файла. Возможно, файл уже открыт другим процессом.");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                System.out.println("Не удалось получить блокировку файла" + e.getMessage());
+                System.out.println("Open: Не удалось получить блокировку файла" + e.getMessage());
                 closeFileChannel();
             }
         } else {
-            System.out.println("Файл не найден");
+            System.out.println("Open: Файл не найден");
         }
     }
 
@@ -95,13 +95,13 @@ public class SuccessPageController {
 
                 fileChannel.write(buffer);
 
-                System.out.println("Файловый канал записан");
+                System.out.println("write: Файловый канал записан");
             } catch (IOException e) {
                 e.printStackTrace();
-                System.out.println("Не удалось записать в файловый канал" + e.getMessage());
+                System.out.println("write: Не удалось записать в файловый канал" + e.getMessage());
             }
         } else {
-            System.out.println("Файловый канал не открыт");
+            System.out.println("write: Файловый канал не открыт");
         }
     }
 
@@ -118,14 +118,14 @@ public class SuccessPageController {
 
                     return new String(readData);
                 } else {
-                    System.out.println("Файл пуст");
+                    System.out.println("read: Файл пуст");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                System.out.println("Не удалось прочитать файловый канал" + e.getMessage());
+                System.out.println("read: Не удалось прочитать файловый канал" + e.getMessage());
             }
         } else {
-            System.out.println("Файловый канал не открыт");
+            System.out.println("read: Файловый канал не открыт");
         }
         return null;
     }
@@ -138,17 +138,18 @@ public class SuccessPageController {
                 }
 
                 fileChannel.close();
-                System.out.println("Файловый канал закрыт");
+                System.out.println("close: Файловый канал закрыт");
             } catch (IOException e) {
                 e.printStackTrace();
-                System.out.println("Не удалось закрыть файловый канал");
+                System.out.println("close: Не удалось закрыть файловый канал");
             }
         } else {
-            System.out.println("Файловый канал не открыт");
+            System.out.println("close: Файловый канал не открыт");
         }
     }
     @FXML
     private void chooseFileButtonAction() throws IOException, SQLException {
+        reArchiveFileIfNeeded();
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите текстовый файл");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Текстовые файлы", "*.txt", "*.secretext", "*.zip"));
@@ -218,6 +219,9 @@ public class SuccessPageController {
                 if (FileInfoDao.setUserFile(currentFileInfo, user) > 0) {
                     createAlertMessage(Alert.AlertType.INFORMATION, "Файл успешно сохранён");
                     Utils.archiveFileAndDeleteSource(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, String.valueOf(user.getId()), selectedFile.toPath());
+                    selectedFile = null;
+                    fileContentTextArea.setText("");
+                    fileNameLabel.setText("");
                 } else {
                     createAlertMessage(Alert.AlertType.ERROR, "Не удалось сохранить файл");
                 }
@@ -234,16 +238,25 @@ public class SuccessPageController {
 
     }
 
+    private void reArchiveFileIfNeeded() {
+        if (selectedFile != null && !selectedFile.getAbsolutePath().endsWith(".zip")) {
+            try {
+                closeFileChannel();
+                FileInfo lastModifiedUserFile = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath());
+                if (lastModifiedUserFile != null) {
+                    String lastPassword = String.valueOf(lastModifiedUserFile.getUserId());
+                    String fileContent = new String(Files.readAllBytes(selectedFile.toPath()));
+                    Utils.archiveFileAndDeleteSource(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, lastPassword, selectedFile.toPath());
+                }
+            } catch (SQLException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     @FXML
     private void backToLoginButtonAction() throws SQLException, IOException {
-        closeFileChannel();
-        FileInfo lastModifiedUserFile = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath());
-        if (lastModifiedUserFile != null) {
-            String lastPassword = String.valueOf(lastModifiedUserFile.getUserId());
-            String fileContent = new String(Files.readAllBytes(selectedFile.toPath()));
-            Utils.archiveFileAndDeleteSource(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, lastPassword, selectedFile.toPath());
-        }
+        reArchiveFileIfNeeded();
         Main.getInstance().switchToLoginPage();
     }
 }
