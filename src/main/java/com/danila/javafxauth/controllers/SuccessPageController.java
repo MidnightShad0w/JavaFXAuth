@@ -181,6 +181,8 @@ public class SuccessPageController {
                 fileNameLabel.setText(selectedFile.getName());
                 fileContentTextArea.setText(fileContent);
             } else {
+                reArchiveFileIfNeeded();
+                selectedFile = null;
                 fileNameLabel.setText("");
                 fileContentTextArea.setText("");
                 createAlertMessage(Alert.AlertType.ERROR, "Файл был изменён извне");
@@ -255,7 +257,7 @@ public class SuccessPageController {
     }
 
     @FXML
-    private void backToLoginButtonAction() throws SQLException, IOException {
+    private void backToLoginButtonAction(){
         reArchiveFileIfNeeded();
         Main.getInstance().switchToLoginPage();
     }
