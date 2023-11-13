@@ -16,6 +16,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 
@@ -235,7 +236,14 @@ public class SuccessPageController {
 
 
     @FXML
-    private void backToLoginButtonAction() {
+    private void backToLoginButtonAction() throws SQLException, IOException {
+        closeFileChannel();
+        FileInfo lastModifiedUserFile = FileInfoDao.getUserFileInfoByPath(selectedFile.getAbsolutePath());
+        if (lastModifiedUserFile != null) {
+            String lastPassword = String.valueOf(lastModifiedUserFile.getUserId());
+            String fileContent = new String(Files.readAllBytes(selectedFile.toPath()));
+            Utils.archiveFileAndDeleteSource(selectedFile.getAbsolutePath(), selectedFile.getName(), fileContent, lastPassword, selectedFile.toPath());
+        }
         Main.getInstance().switchToLoginPage();
     }
 }
